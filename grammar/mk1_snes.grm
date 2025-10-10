@@ -1,0 +1,29 @@
+[LEFT] [RIGHT] [FP]             = Fireball (Johnny Cage)
+[LEFT] [RIGHT] [FK]             = Shadow Kick (Johnny Cage)
+[BLOCK] [FP]                    = Low Blow (Johnny Cage)
+[RIGHT] [RIGHT] [RIGHT] [BP]    = Finisher (Johnny Cage)
+
+[BLOCK] [LEFT] [RIGHT]          = Knife Throw (Kano)
+[LEFT] [DOWN] [RIGHT] [FP]      = Finisher (Kano)
+
+[DOWN] [RIGHT] [FP]             = Ice Blast (Sub-Zero)
+[LEFT] [FP] [FK] [BLOCK]        = Slide (Sub-Zero)
+[RIGHT] [DOWN] [RIGHT] [BP]     = Finisher (Sub-Zero)
+
+[DOWN] [RIGHT] [FP]             = Lightning Bolt (Raiden)
+[LEFT] [LEFT] [RIGHT]           = Torpedo (Raiden)
+[DOWN] [FLIPSTANCE]             = Teleport (Raiden)
+[RIGHT] [LEFT] [LEFT] [LEFT] [BP] = Finisher (Raiden)
+
+[RIGHT] [RIGHT] [BP]            = Fireball (Liu Kang)
+[RIGHT] [RIGHT] [BK]            = Flying Kick (Liu Kang)
+[BLOCK] [TAG] [BP]              = Finisher (Liu Kang)
+
+[LEFT] [LEFT] [FP]              = Ring Toss (Sonya)
+[BLOCK] [FP] [FK]               = Leg Grab (Sonya)
+[RIGHT] [LEFT] [BP]             = Square Wave Punch (Sonya)
+[RIGHT] [RIGHT] [LEFT] [LEFT] [BLOCK] = Finisher (Sonya)
+
+[LEFT] [LEFT] [FP]              = Spear (Scorpion)
+[DOWN] [LEFT] [BP]              = Teleport Punch (Scorpion)
+[BLOCK] [FLIPSTANCE] [FLIPSTANCE] = Hellfire (Scorpion)
