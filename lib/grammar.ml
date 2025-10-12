@@ -41,4 +41,4 @@ let rec create_grammar (channel : in_channel) (rules : rule list) : rule list =
         create_grammar channel rules
   with End_of_file ->
     close_in channel;
-    List.rev rules
+    rules
