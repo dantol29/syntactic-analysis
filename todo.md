@@ -1,0 +1,11 @@
+- [x] Split grammar file rules to get a list of tokens
+- [] Generate transitions for each token 
+- [] The key mappings must be automatically computed from the grammar
+- [] Take user input and consider it finished after X seconds of inactivity
+- [] Keep recursive functions tail-recursive
+- [] Inputs should always be processed line by line without the program
+storing everything in memory
+- [] Functions shorter than 20 lines
+- [] Code should be split into well-thought-out modules; these modules should not export unnecessary functions
+- [] Code should avoid exceptions as much as possible
+- [] Avoid mutable constructions as much as possible
