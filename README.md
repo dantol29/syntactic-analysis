@@ -1,6 +1,6 @@
 # Finite State Machine
 
-## Fighting Game
+## FSM
   - **Σ**(input alphabet, defined in .grm file) - {up, down, left, right, q}
   - **S**(states, a set of fighting commands) - {fireball, shadow kick, idle}
   - **s0**(initial state) - idle
@@ -16,7 +16,8 @@
 [RIGHT] [RIGHT] [RIGHT] [BP]    = Finisher (Johnny Cage)
 ```
 
-### 2. TODO: Here our approach 
+### 2. Generation
+![arch](assets/sequence.png)
 
 
 ## Notes
