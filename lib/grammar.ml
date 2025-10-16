@@ -2,6 +2,11 @@ type control =  BackPunch | FrontPunch
 type action = string
 type rule = control list * action
 
+type state_index = int64
+type state_transition_func = control * state_index
+type state = state_index * state_transition_func list
+type state_table = state list
+
 let get_control_type token =
   match token with
   | "[BP]" -> Some(BackPunch)
@@ -42,3 +47,6 @@ let rec create_grammar (channel : in_channel) (rules : rule list) : rule list =
   with End_of_file ->
     close_in channel;
     rules
+
+let create_transitions (rules: rule list) (state_table: state_table) = 
+  (* TODO *)

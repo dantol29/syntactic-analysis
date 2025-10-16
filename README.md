@@ -17,7 +17,7 @@
 ```
 
 ### 2. Generation
-![arch](assets/sequence.png)
+![arch](docs/fsm.png)
 
 
 ## Notes
