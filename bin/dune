@@ -1,4 +1,4 @@
 (executable
  (public_name fatality)
  (name main)
- (libraries grammar))
+ (libraries fsm))
