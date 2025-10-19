@@ -89,10 +89,10 @@ int main()
     // initial empty state
     states.push_back({});
 
-    for (auto iter = rules.begin(); iter != rules.end(); iter++)
+    for (auto r = rules.begin(); r != rules.end(); r++)
     {
         int current_state = 0;
-        for (auto input = iter->first.begin(); input != iter->first.end(); input++)
+        for (auto input = r->first.begin(); input != r->first.end(); input++)
         {
             int transition = get_transition(*input, states[current_state]);
             if (transition == -1)
@@ -108,7 +108,7 @@ int main()
             current_state = transition;
         }
 
-        states[current_state].output = iter->second;
+        states[current_state].output = r->second;
     }
 
     print_states(states);
