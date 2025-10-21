@@ -1,4 +1,5 @@
 (executable
  (public_name fatality)
  (name main)
- (libraries fsm))
+ (libraries fsm sdl)
+)

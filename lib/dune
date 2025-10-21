@@ -1,2 +1,6 @@
 (library
- (name fsm))
+ (name fsm)
+ (modules fsm sdl_keys)
+ (libraries sdl)
+ (wrapped false)   ; <— wichtig
+)
