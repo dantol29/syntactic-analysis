@@ -5,7 +5,7 @@ type rule = control list * action
 type transition = control * int
 type state  = {
   transitions : (control * int) list;
-  output : string option;
+  outputs : string list option;
 }
 
 let get_control_type token =
@@ -42,7 +42,7 @@ let rec parse_file (channel : in_channel) (rules : rule list) : rule list =
     rules
 
 let create_states (rules: rule list) : state list =
-  let states = ref [{transitions = []; output = None}] in
+  let states = ref [{transitions = []; outputs = None}] in
 
   let get_transition ctrl state_idx =
     try Some (List.assoc ctrl (List.nth !states state_idx).transitions)
@@ -56,9 +56,9 @@ let create_states (rules: rule list) : state list =
     states := List.mapi (fun i s -> if i = from_state then updated else s) !states
   in
 
-  let set_output state_idx output =
+  let set_outputs state_idx outputs =
     let st = List.nth !states state_idx in
-    let updated = {st with output = Some output} in
+    let updated = {st with outputs = outputs} in
     states := List.mapi (fun i s -> if i = state_idx then updated else s) !states
   in
 
@@ -70,15 +70,21 @@ let create_states (rules: rule list) : state list =
       | None ->
           let new_idx = List.length !states in
           add_transition !current ctrl new_idx;
-          states := !states @ [{transitions = []; output = None}];
+          states := !states @ [{transitions = []; outputs = None}];
           current := new_idx
     ) controls;
-    set_output !current output
+  
+    let old_outputs = (List.nth !states !current).outputs in
+    let new_outputs = 
+      match old_outputs with
+      | None -> Some [output]
+      | Some outputs_list -> Some (outputs_list @ [output])
+    in
+    set_outputs !current new_outputs
   in
 
   List.iter process_rule rules;
   !states
-
 (* PRINTS FOR DEBUG *)
 
 let print_control = function
@@ -111,8 +117,8 @@ let print_state (index: int) (state: state) =
 
   List.iter print_transition state.transitions;
 
-  (match state.output with
-  | Some s -> (print_string s; print_newline ())
+  (match state.outputs with
+  | Some s -> (List.iter print_endline s; print_newline ())
   | None -> ());
 
   print_newline ()

@@ -4,7 +4,7 @@ type rule = control list * action
 type transition = control * int
 type state  = {
     transitions : (control * int) list;
-    output : string option;
+    outputs : string list option;
   }
 
 val parse_file : in_channel -> rule list -> rule list

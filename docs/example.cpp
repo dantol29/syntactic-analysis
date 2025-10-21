@@ -15,7 +15,7 @@ enum control
 typedef struct state
 {
     std::vector<std::pair<control, int>> transitions;
-    std::string output;
+    std::vector<std::string> outputs;
 } t_state;
 
 typedef std::pair<std::vector<control>, std::string> rule;
@@ -50,8 +50,8 @@ void print_states(std::vector<t_state> &states)
             std::cout << control_to_string(transition->first) << " -> " << transition->second << std::endl;
         }
 
-        if (!state->output.empty())
-            std::cout << "Output: " << state->output << std::endl;
+        for (auto output = state->outputs.begin(); output != state->outputs.end(); output++)
+            std::cout << "Output: " << *output << std::endl;
     }
 }
 
@@ -68,6 +68,9 @@ void create_rules(std::vector<rule> &rules)
 
     controls = {BLOCK, FRONTPUNCH};
     rules.push_back(std::make_pair(controls, "Low Blow"));
+
+    controls = {BLOCK, FRONTPUNCH};
+    rules.push_back(std::make_pair(controls, "Low Blow 2"));
 }
 
 int get_transition(const control c, const state &s)
@@ -108,7 +111,7 @@ int main()
             current_state = transition;
         }
 
-        states[current_state].output = r->second;
+        states[current_state].outputs.push_back(r->second);
     }
 
     print_states(states);
