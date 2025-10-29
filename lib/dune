@@ -1,2 +1,5 @@
 (library
- (name fsm))
+ (name fsm)
+ (modules fsm)
+ (wrapped false)   ; <— wichtig
+)

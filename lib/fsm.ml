@@ -85,6 +85,8 @@ let create_states (rules: rule list) : state list =
 
   List.iter process_rule rules;
   !states
+
+
 (* PRINTS FOR DEBUG *)
 
 let print_control = function
@@ -111,9 +113,9 @@ let print_transition ((c, i): transition) =
   print_newline ()
 
 let print_state (index: int) (state: state) = 
-  print_string "State ";
+  print_string "=======State ";
   print_int index;
-  print_newline ();
+  print_endline "=======";
 
   List.iter print_transition state.transitions;
 
@@ -121,4 +123,4 @@ let print_state (index: int) (state: state) =
   | Some s -> (List.iter print_endline s; print_newline ())
   | None -> ());
 
-  print_newline ()
+  print_endline "======================\n\n\n"
