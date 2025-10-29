@@ -15,7 +15,7 @@ let with_raw_terminal f =
     tcsetattr stdin TCSANOW termio;
     raise e
 
-let read_char_no_enter () : char =
+let read_char () : char =
   let term = tcgetattr stdin in
   let old = { term with c_icanon = true } in
   let raw = { term with c_icanon = false; c_echo = false } in
@@ -34,22 +34,6 @@ let char_to_control = function
   | 'A' -> Some Fsm.Block
   | _ -> None
 
-let advance (states : Fsm.state list) (current : int) (c : Fsm.control) : int =
-  let next_from idx =
-    try Some (List.assoc c (List.nth states idx).Fsm.transitions)
-    with Not_found -> None
-  in
-  match next_from current with
-  | Some nxt ->
-      Fsm.print_state current (List.nth states nxt);
-      nxt
-  | None ->
-      (match next_from 0 with
-       | Some nxt0 ->
-           Fsm.print_state current (List.nth states nxt0);
-           nxt0
-       | None -> 0)
-
 let () =
   try
     let grammar_path =
@@ -58,24 +42,31 @@ let () =
     let ch = open_in grammar_path in
     let rules = Fsm.parse_file ch [] in
 
-    Printf.printf "📜 Loaded Grammar: \n";
+    print_endline "Loaded Grammar: \n";
     let rules_rev = List.rev rules in
     Fsm.print_rules rules_rev;
 
-    Printf.printf "🧩 FSM States: \n";
+    print_endline "FSM States: \n";
     let states = Fsm.create_states rules_rev in
     List.iteri Fsm.print_state states;
 
-    ignore (
-     let running = ref true in
-     let current = ref 0 in
-      while !running do
-       let c = read_char_no_enter () in
-       match char_to_control c with
-         | Some ctrl -> current := advance states !current ctrl
-         | None -> running := false
-       done
-     )
+    print_endline "===========START============ \n";
 
+    let rec game (current_state : Fsm.state) (index : int) = 
+      Fsm.print_state index current_state;
+
+      let c = read_char () in
+      match char_to_control c with
+        | Some control ->
+            (match Fsm.find_transition control current_state with
+               | Some next_state -> game (List.nth states next_state) next_state
+               | None -> game (List.nth states 0) 0)
+        | None -> ()
+    in
+     
+
+    game (List.nth states 0) 0;
+
+    print_endline "============END============= \n";
   with Sys_error e ->
     Printf.printf "ERROR: %s\n!" e
