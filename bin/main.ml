@@ -44,7 +44,7 @@ let () =
 
     print_endline "Loaded Grammar: \n";
     let rules_rev = List.rev rules in
-    Fsm.print_rules rules_rev;
+    List.iter Fsm.print_rule rules_rev;
 
     print_endline "FSM States: \n";
     let states = Fsm.create_states rules_rev in

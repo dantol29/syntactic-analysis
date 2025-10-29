@@ -8,7 +8,7 @@ type state  = {
   outputs : string list option;
 }
 
-let get_control_type token =
+let string_to_control token =
   match token with
   | "[BP]" -> Some(BackPunch)
   | "[FP]" -> Some(FrontPunch)
@@ -17,11 +17,19 @@ let get_control_type token =
   | "[LEFT]" -> Some(Left)
   | "[RIGHT]" -> Some(Right)
   | _ -> None
+ 
+let control_to_string = function
+  | BackPunch -> "[BP] "
+  | FrontPunch -> "[FP] "
+  | FrontKick -> "[FK] "
+  | Block -> "[BLOCK] "
+  | Left -> "[LEFT] "
+  | Right -> "[RIGHT] "
 
 let parse_control (line: string): control list = 
   let trimmed_line = String.trim line in
   let parts = String.split_on_char ' ' trimmed_line in
-  List.filter_map (get_control_type) parts
+  List.filter_map string_to_control parts
 
 let rec parse_file (channel : in_channel) (rules : rule list) : rule list =
   try
@@ -44,81 +52,43 @@ let rec parse_file (channel : in_channel) (rules : rule list) : rule list =
 let find_transition (control: control) (current_state: state): int option =
   List.assoc_opt control current_state.transitions
 
-let create_states (rules: rule list) : state list =
-  let states = ref [{transitions = []; outputs = None}] in
+let update_state (states : state list) (index : int) (new_state : state) : state list =
+  List.mapi (fun i s -> if i = index then new_state else s) states
 
-  let add_transition from_state ctrl to_state =
-    let st = List.nth !states from_state in
-    let new_transitions = (ctrl, to_state) :: st.transitions in
-    let updated = {st with transitions = new_transitions} in
-    states := List.mapi (fun i s -> if i = from_state then updated else s) !states
-  in
-
-  let set_outputs state_idx outputs =
-    let st = List.nth !states state_idx in
-    let updated = {st with outputs = outputs} in
-    states := List.mapi (fun i s -> if i = state_idx then updated else s) !states
-  in
-
-  let process_rule (controls, output) =
-    let current = ref 0 in
-    List.iter (fun ctrl ->
-      match find_transition ctrl (List.nth !states !current) with
-      | Some next -> current := next
+let rec add_rule ((controls, action) : rule) (states : state list) (state_index : int) : state list =
+  match controls with
+  | head :: tail -> (
+      match find_transition head (List.nth states state_index) with
+      | Some next_index ->
+          add_rule (tail, action) states next_index (* follow existing transition*)
       | None ->
-          let new_idx = List.length !states in
-          add_transition !current ctrl new_idx;
-          states := !states @ [{transitions = []; outputs = None}];
-          current := new_idx
-    ) controls;
-  
-    let old_outputs = (List.nth !states !current).outputs in
-    let new_outputs = 
-      match old_outputs with
-      | None -> Some [output]
-      | Some outputs_list -> Some (outputs_list @ [output])
-    in
-    set_outputs !current new_outputs
-  in
+          let new_state = { transitions = []; outputs = None } in
+          let new_index = List.length states in
+          let current = List.nth states state_index in
+          let updated_current =
+            { current with transitions = (head, new_index) :: current.transitions }
+          in
+          let states = update_state states state_index updated_current in
+          let states = states @ [new_state] in
+          add_rule (tail, action) states new_index
+    )
+  | [] ->
+      let current = List.nth states state_index in
+      let updated_current = { current with outputs = Some [action] } in
+      update_state states state_index updated_current
 
-  List.iter process_rule rules;
-  !states
-
-
-(* PRINTS FOR DEBUG *)
-
-let print_control = function
-| BackPunch -> print_string "[BP] "
-| FrontPunch -> print_string "[FP] "
-| FrontKick -> print_string "[FK] "
-| Block -> print_string "[BLOCK] "
-| Left -> print_string "[LEFT] "
-| Right -> print_string "[RIGHT] "
+let create_states (rules: rule list): state list =
+  let initial_state = [{ transitions = []; outputs = None }] in
+  List.fold_left (fun states rule -> add_rule rule states 0) initial_state rules
 
 let print_rule ((c, a): rule) =
-  List.iter print_control c;
-  print_string a;
-  print_newline ()
-
-let print_rules (rules: rule list) = 
-  List.iter print_rule rules;
-  print_newline ()
-
-let print_transition ((c, i): transition) = 
-  print_control c;
-  print_string " -> ";
-  print_int i;
-  print_newline ()
+  List.iter (fun ctrl -> print_string (control_to_string ctrl)) c;
+  print_endline a
 
 let print_state (index: int) (state: state) = 
-  print_string "=======State ";
-  print_int index;
-  print_endline "=======";
-
-  List.iter print_transition state.transitions;
-
-  (match state.outputs with
-  | Some s -> (List.iter print_endline s; print_newline ())
-  | None -> ());
-
+  Printf.printf "======= State %d ======\n" index;
+  
+  List.iter (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i) state.transitions;
+  Option.iter (List.iter print_endline) state.outputs;
+  
   print_endline "======================\n\n\n"
