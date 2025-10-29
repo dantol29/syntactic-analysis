@@ -41,13 +41,11 @@ let rec parse_file (channel : in_channel) (rules : rule list) : rule list =
     close_in channel;
     rules
 
+let find_transition (control: control) (current_state: state): int option =
+  List.assoc_opt control current_state.transitions
+
 let create_states (rules: rule list) : state list =
   let states = ref [{transitions = []; outputs = None}] in
-
-  let get_transition ctrl state_idx =
-    try Some (List.assoc ctrl (List.nth !states state_idx).transitions)
-    with Not_found -> None
-  in
 
   let add_transition from_state ctrl to_state =
     let st = List.nth !states from_state in
@@ -65,7 +63,7 @@ let create_states (rules: rule list) : state list =
   let process_rule (controls, output) =
     let current = ref 0 in
     List.iter (fun ctrl ->
-      match get_transition ctrl !current with
+      match find_transition ctrl (List.nth !states !current) with
       | Some next -> current := next
       | None ->
           let new_idx = List.length !states in

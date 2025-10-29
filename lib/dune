@@ -1,5 +1,4 @@
 (library
  (name fsm)
  (modules fsm)
- (wrapped false)   ; <— wichtig
 )
