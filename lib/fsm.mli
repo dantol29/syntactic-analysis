@@ -11,4 +11,4 @@ val parse_file : in_channel -> rule list -> rule list
 val create_states: rule list -> state list
 val find_transition: control -> state -> int option
 val print_state: int -> state -> unit
-val print_rules : rule list -> unit
+val print_rule : rule -> unit
