@@ -17,7 +17,6 @@ let with_raw_terminal f =
 
 let read_char () : char =
   let term = tcgetattr stdin in
-  let old = { term with c_icanon = true } in
   let raw = { term with c_icanon = false; c_echo = false } in
   tcsetattr stdin TCSANOW raw;
   let buf = Bytes.create 1 in
