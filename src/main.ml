@@ -2,10 +2,7 @@ open Unix
 
 let with_raw_terminal f =
   let termio = tcgetattr stdin in
-  let raw = { termio with
-    c_icanon = false;
-    c_echo = false;
-  } in
+  let raw = { termio with c_icanon = false; c_echo = false } in
   tcsetattr stdin TCSANOW raw;
   try
     let result = f () in
@@ -15,14 +12,10 @@ let with_raw_terminal f =
     tcsetattr stdin TCSANOW termio;
     raise e
 
-let read_char () : char =
-  let term = tcgetattr stdin in
-  let raw = { term with c_icanon = false; c_echo = false } in
-  tcsetattr stdin TCSANOW raw;
-  let buf = Bytes.create 1 in
-  let n = read stdin buf 0 1 in
-  tcsetattr stdin TCSANOW term;
-  if n = 1 then Bytes.get buf 0 else '\000'
+let read_char () =
+  with_raw_terminal (fun () ->
+    let buf = Bytes.create 1 in
+    if read stdin buf 0 1 = 1 then Bytes.get buf 0 else '\000')
 
 let char_to_control = function
   | 'a' -> Some Fsm.Left

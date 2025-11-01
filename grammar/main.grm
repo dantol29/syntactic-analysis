@@ -1,4 +1,5 @@
 [LEFT] [RIGHT] [FP] = Fireball
+[LEFT] [RIGHT] [FP] = Another Fireball
 [LEFT] [RIGHT] [FK] = Shadow Kick
 [RIGHT] [RIGHT] [RIGHT] [BP] = Finisher
 [BLOCK] [FP] = Low Blow
