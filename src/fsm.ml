@@ -74,7 +74,14 @@ let rec add_rule ((controls, action) : rule) (states : state list) (state_index 
     )
   | [] ->
       let current = List.nth states state_index in
-      let updated_current = { current with outputs = Some [action] } in
+      let updated_current = 
+        let new_outputs = 
+          match current.outputs with
+            | None -> Some [action]
+            | Some actions -> Some (actions @ [action])
+          in
+         { current with outputs = new_outputs }
+      in
       update_state states state_index updated_current
 
 let create_states (rules: rule list): state list =
@@ -87,8 +94,6 @@ let print_rule ((c, a): rule) =
 
 let print_state (index: int) (state: state) = 
   Printf.printf "======= State %d ======\n" index;
-  
   List.iter (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i) state.transitions;
   Option.iter (List.iter print_endline) state.outputs;
-  
   print_endline "======================\n\n\n"
