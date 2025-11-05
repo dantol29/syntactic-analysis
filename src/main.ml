@@ -44,21 +44,37 @@ let () =
 
     print_endline "===========START============ \n";
 
-    let rec game (current_state : Fsm.state) (index : int) = 
+    let rec game (current_state : Fsm.state) (index : int) =
       Fsm.print_state index current_state;
 
       let c = read_char () in
       match char_to_control c with
-        | Some control ->
-            (match Fsm.find_transition control current_state with
-               | Some next_state -> game (List.nth states next_state) next_state
-               | None -> game (List.nth states 0) 0)
-        | None -> ()
+      | Some control ->
+          (match Fsm.find_transition control current_state with
+           | Some next_index ->
+               let next = List.nth states next_index in
+               (match next.outputs with
+                | Some outs ->
+                    List.iter print_endline outs;
+                    game (List.nth states 0) 0
+                | None ->
+                    game next next_index)
+           | None ->
+               match Fsm.find_transition control (List.nth states 0) with
+               | Some idx0 ->
+                   let st0_next = List.nth states idx0 in
+                   (match st0_next.outputs with
+                    | Some outs ->
+                        List.iter print_endline outs;
+                        game (List.nth states 0) 0
+                    | None ->
+                        game st0_next idx0)
+               | None ->
+                   game (List.nth states 0) 0)
+      | None ->
+          game current_state index
     in
-     
 
-    game (List.nth states 0) 0;
-
-    print_endline "============END============= \n";
+    game (List.nth states 0) 0
   with Sys_error e ->
     Printf.printf "ERROR: %s\n!" e
