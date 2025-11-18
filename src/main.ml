@@ -31,34 +31,38 @@ let () =
     let grammar_path =
       if Array.length Sys.argv >= 2 then Sys.argv.(1) else "grammar/main.grm"
     in
-    let ch = open_in grammar_path in
-    let rules = Fsm.parse_file ch [] in
+    let file = open_in grammar_path in
+    let rules = Fsm.parse_file file [] in
+    let states = Fsm.create_states rules in
+    
+    if Array.length Sys.argv > 2 && Sys.argv.(2) = "debug" then begin
+      print_endline "Loaded Grammar: \n";
+      List.iter Fsm.print_rule (List.rev rules);
+      print_endline "\nFSM States: \n";
+      List.iteri Fsm.print_state states;
+    end;
 
-    print_endline "Loaded Grammar: \n";
-    let rules_rev = List.rev rules in
-    List.iter Fsm.print_rule rules_rev;
+    print_endline "Key Mappings:";
+    (* TODO *)
 
-    print_endline "FSM States: \n";
-    let states = Fsm.create_states rules_rev in
-    List.iteri Fsm.print_state states;
+    let rec game state index =
+      Fsm.print_state index state;
 
-    print_endline "===========START============ \n";
+      match char_to_control (read_char ()) with
+      | None -> game state index (* invalid input -> stay at the same state *)
+      | Some control ->
+          let next_index_opt =
+            match Fsm.find_transition control state with
+            | Some i -> Some i
+            | None -> Fsm.find_transition control (List.nth states 0)
+          in  (* if transition in current state not found -> search in 0 state *)
 
-    let rec game (current_state : Fsm.state) (index : int) = 
-      Fsm.print_state index current_state;
-
-      let c = read_char () in
-      match char_to_control c with
-        | Some control ->
-            (match Fsm.find_transition control current_state with
-               | Some next_state -> game (List.nth states next_state) next_state
-               | None -> game (List.nth states 0) 0)
-        | None -> ()
+          match next_index_opt with
+          | None -> game (List.nth states 0) 0  (* transition not found both in current and in 0 state -> go to 0 state *)
+          | Some next_index -> game (List.nth states next_index) next_index
     in
-     
 
-    game (List.nth states 0) 0;
+  game (List.nth states 0) 0
 
-    print_endline "============END============= \n";
   with Sys_error e ->
     Printf.printf "ERROR: %s\n!" e
