@@ -1,12 +1,25 @@
-type control =  BackPunch | FrontPunch |  FrontKick | Block | Left | Right
+type control = BackPunch | FrontPunch | FrontKick | Block | Left | Right
 type action = string
 type rule = control list * action
 
 type transition = control * int
+
 type state  = {
   transitions : (control * int) list;
   outputs : string list option;
 }
+
+let dedup lst =
+  List.fold_left
+    (fun acc x -> if List.mem x acc then acc else x :: acc)
+    [] lst
+  |> List.rev
+
+let rules_to_control (rules : rule list) : control list =
+  rules
+  |> List.map fst        
+  |> List.concat         
+  |> dedup               
 
 let string_to_control token =
   match token with
@@ -17,7 +30,7 @@ let string_to_control token =
   | "[LEFT]" -> Some(Left)
   | "[RIGHT]" -> Some(Right)
   | _ -> None
- 
+
 let control_to_string = function
   | BackPunch -> "[BP] "
   | FrontPunch -> "[FP] "
@@ -26,7 +39,7 @@ let control_to_string = function
   | Left -> "[LEFT] "
   | Right -> "[RIGHT] "
 
-let parse_control (line: string): control list = 
+let parse_control (line: string): control list =
   let trimmed_line = String.trim line in
   let parts = String.split_on_char ' ' trimmed_line in
   List.filter_map string_to_control parts
@@ -37,17 +50,17 @@ let rec parse_file (channel : in_channel) (rules : rule list) : rule list =
     match String.split_on_char '=' line with
     | [control; action] ->
         (match parse_control control with
-        | [] ->
-            print_endline "Invalid controls";
-            parse_file channel rules
-        | r ->
-            parse_file channel ((r, action) :: rules))
+         | [] ->
+             print_endline "Invalid controls";
+             parse_file channel rules
+         | r ->
+             parse_file channel ((r, String.trim action) :: rules))
     | _ ->
         print_endline "No delimiter";
         parse_file channel rules
   with End_of_file ->
     close_in channel;
-    rules
+    List.rev rules
 
 let find_transition (control: control) (current_state: state): int option =
   List.assoc_opt control current_state.transitions
@@ -60,7 +73,7 @@ let rec add_rule ((controls, action) : rule) (states : state list) (state_index 
   | head :: tail -> (
       match find_transition head (List.nth states state_index) with
       | Some next_index ->
-          add_rule (tail, action) states next_index (* follow existing transition*)
+          add_rule (tail, action) states next_index
       | None ->
           let new_state = { transitions = []; outputs = None } in
           let new_index = List.length states in
@@ -74,13 +87,13 @@ let rec add_rule ((controls, action) : rule) (states : state list) (state_index 
     )
   | [] ->
       let current = List.nth states state_index in
-      let updated_current = 
-        let new_outputs = 
+      let updated_current =
+        let new_outputs =
           match current.outputs with
-            | None -> Some [action]
-            | Some actions -> Some (actions @ [action])
-          in
-         { current with outputs = new_outputs }
+          | None -> Some [action]
+          | Some actions -> Some (actions @ [action])
+        in
+        { current with outputs = new_outputs }
       in
       update_state states state_index updated_current
 
@@ -92,8 +105,37 @@ let print_rule ((c, a): rule) =
   List.iter (fun ctrl -> print_string (control_to_string ctrl)) c;
   print_endline a
 
-let print_state (index: int) (state: state) = 
+let print_state (index: int) (state: state) =
   Printf.printf "======= State %d ======\n" index;
-  List.iter (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i) state.transitions;
-  Option.iter (List.iter print_endline) state.outputs;
+  List.iter
+    (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i)
+    state.transitions;
+
+  (match state.outputs with
+  | Some outs -> 
+      print_endline "Outputs: ";
+      List.iter print_endline outs
+  | None -> ());
+
   print_endline "======================\n\n\n"
+
+let print_state_debug (state: state) =
+  print_endline "\n=======Current State======\n";
+  List.iter
+    (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i)
+    state.transitions;
+
+  (match state.outputs with
+  | Some outs -> 
+      print_endline "Outputs: ";
+      List.iter print_endline outs
+  | None -> ());
+
+  print_endline "============================\n\n\n"
+
+let print_outputs (state : state) =
+  match state.outputs with
+  | None -> ()
+  | Some outs ->
+      print_newline ();
+      List.iter (fun a -> Printf.printf "ACTION: %s\n%!" a) outs
