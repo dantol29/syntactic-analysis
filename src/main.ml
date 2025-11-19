@@ -1,6 +1,7 @@
 open Unix
 
 let available_keys = [ 'a'; 'd'; 'p'; 'k'; 'b'; 'A' ]
+let available_controls = [ Fsm.Left; Fsm.Right; Fsm.FrontPunch; Fsm.FrontKick; Fsm.BackPunch; Fsm.Block; ]
 
 let with_raw_terminal f =
   let termio = tcgetattr stdin in
@@ -20,119 +21,77 @@ let read_char () =
       if read stdin buf 0 1 = 1 then Bytes.get buf 0 else '\000')
 
 let build_keymap (controls : Fsm.control list) : (char * Fsm.control) list =
-  let rec aux keys ctrls acc =
+  let rec map_key_to_control keys ctrls acc =
     match keys, ctrls with
-    | k :: ks, c :: cs ->
-        aux ks cs ((k, c) :: acc)
+    | key_head :: key_tail, ctrl_head :: ctrl_tail ->
+        map_key_to_control key_tail ctrl_tail ((key_head, ctrl_head) :: acc)
     | _, [] ->
         List.rev acc
     | [], _ :: _ ->
         failwith "Not enough keys for all controls"
   in
-  aux available_keys controls []
+  map_key_to_control available_keys controls []
 
 let char_to_control keymap ch =
   List.assoc_opt ch keymap
 
-let control_to_key (keymap : (char * Fsm.control) list) (control : Fsm.control)
-  : char option =
-  keymap
-  |> List.find_opt (fun (_, c) -> c = control)
-  |> Option.map fst
+let print_game_info debug rules states keymap =
+  (
+    if debug then (
+      print_endline "Loaded Grammar: \n";
+      List.iter Fsm.print_rule rules;
+      print_endline "\nFSM States: \n";
+      List.iteri Fsm.print_state states;
+      print_endline ""
+    );
 
-let keys_for_rule keymap (controls, action) =
-  let rec aux cs acc =
-    match cs with
-    | [] -> Some (List.rev acc, action)
-    | c :: rest ->
-        (match control_to_key keymap c with
-         | None -> None
-         | Some k -> aux rest (k :: acc))
-  in
-  aux controls []
+    print_endline "Key Mappings:";
+    List.iter
+      (fun (k, c) -> Printf.printf "%c -> %s\n" k (Fsm.control_to_string c))
+      keymap;
+
+    print_endline "\nMove Combos:";
+    List.iter Fsm.print_rule rules;
+
+    print_endline "----------------------"
+  )
 
 let () =
   try
+    let debug = Array.length Sys.argv > 2 && Sys.argv.(2) = "debug" in
     let grammar_path =
       if Array.length Sys.argv >= 2 then Sys.argv.(1) else "grammar/main.grm"
     in
     let file = open_in grammar_path in
     let rules = Fsm.parse_file file [] in
     let states = Fsm.create_states rules in
-
-    let controls_used = Fsm.controls_from_rules rules in
-
-    let canonical_controls =
-      [ Fsm.Left;
-        Fsm.Right;
-        Fsm.FrontPunch;
-        Fsm.FrontKick;
-        Fsm.BackPunch;
-        Fsm.Block;
-      ]
-    in
-
-    let controls =
-      List.filter (fun c -> List.mem c controls_used) canonical_controls
-    in
-
+    let controls = Fsm.rules_to_control rules in
     let keymap = build_keymap controls in
 
-    let debug =
-      Array.length Sys.argv > 2 && Sys.argv.(2) = "debug"
-    in
+    print_game_info debug rules states keymap;
 
-    if debug then begin
-      print_endline "Loaded Grammar: \n";
-      List.iter Fsm.print_rule (List.rev rules);
-      print_endline "\nFSM States: \n";
-      List.iteri Fsm.print_state states;
-      print_endline ""
-    end;
-
-    print_endline "Key Mappings:";
-    List.iter
-      (fun (k, c) ->
-         Printf.printf "%c -> %s\n" k (Fsm.control_to_string c))
-      keymap;
-
-    print_endline "\nMove Combos:";
-    List.rev rules
-    |> List.iter (fun rule ->
-           match keys_for_rule keymap rule with
-           | None -> ()  
-           | Some (keys, action) ->
-               List.iter (fun k -> Printf.printf "%c " k) keys;
-               Printf.printf "-> %s\n" action
-       );
-
-    print_endline "----------------------";
-
-    let rec game state index =
-      if debug then Fsm.print_state index state;
+    let rec game state sequence =
+      Fsm.print_outputs state;
+      if debug then Fsm.print_state_debug state;
 
       let ch = read_char () in
       match char_to_control keymap ch with
-      | None ->
-          game state index
+      | None -> game state sequence
       | Some control ->
-          Printf.printf "%s%!" (Fsm.control_to_string control);
-
-          let next_index_opt =
-            match Fsm.find_transition control state with
-            | Some i -> Some i
-            | None -> Fsm.find_transition control (List.nth states 0)
-          in
-          match next_index_opt with
-          | None ->
-              game (List.nth states 0) 0
+          print_string "Sequence: ";
+          let ctrl_str = Fsm.control_to_string control in
+          match Fsm.find_transition control state with
           | Some next_index ->
-              let next_state = List.nth states next_index in
-              Fsm.print_outputs next_state;
-              game next_state next_index
+              print_endline (sequence ^ ctrl_str);
+              game (List.nth states next_index) (sequence ^ ctrl_str)
+          | None -> 
+              print_endline ctrl_str;
+              match Fsm.find_transition control (List.nth states 0) with
+              | None -> game (List.nth states 0) ctrl_str
+              | Some next_index -> game (List.nth states next_index) ctrl_str
     in
 
-    game (List.nth states 0) 0
+    game (List.nth states 0) ""
 
   with Sys_error e ->
     Printf.printf "ERROR: %s\n!" e

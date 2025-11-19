@@ -9,6 +9,18 @@ type state  = {
   outputs : string list option;
 }
 
+let dedup lst =
+  List.fold_left
+    (fun acc x -> if List.mem x acc then acc else x :: acc)
+    [] lst
+  |> List.rev
+
+let rules_to_control (rules : rule list) : control list =
+  rules
+  |> List.map fst        
+  |> List.concat         
+  |> dedup               
+
 let string_to_control token =
   match token with
   | "[BP]" -> Some(BackPunch)
@@ -48,7 +60,7 @@ let rec parse_file (channel : in_channel) (rules : rule list) : rule list =
         parse_file channel rules
   with End_of_file ->
     close_in channel;
-    rules
+    List.rev rules
 
 let find_transition (control: control) (current_state: state): int option =
   List.assoc_opt control current_state.transitions
@@ -98,21 +110,28 @@ let print_state (index: int) (state: state) =
   List.iter
     (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i)
     state.transitions;
-  Option.iter (List.iter print_endline) state.outputs;
+
+  (match state.outputs with
+  | Some outs -> 
+      print_endline "Outputs: ";
+      List.iter print_endline outs
+  | None -> ());
+
   print_endline "======================\n\n\n"
 
+let print_state_debug (state: state) =
+  print_endline "\n=======Current State======\n";
+  List.iter
+    (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i)
+    state.transitions;
 
-let dedup lst =
-  List.fold_left
-    (fun acc x -> if List.mem x acc then acc else x :: acc)
-    [] lst
-  |> List.rev
+  (match state.outputs with
+  | Some outs -> 
+      print_endline "Outputs: ";
+      List.iter print_endline outs
+  | None -> ());
 
-let controls_from_rules (rules : rule list) : control list =
-  rules
-  |> List.map fst        
-  |> List.concat         
-  |> dedup               
+  print_endline "============================\n\n\n"
 
 let print_outputs (state : state) =
   match state.outputs with
@@ -120,4 +139,3 @@ let print_outputs (state : state) =
   | Some outs ->
       print_newline ();
       List.iter (fun a -> Printf.printf "ACTION: %s\n%!" a) outs
-
