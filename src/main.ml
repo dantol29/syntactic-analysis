@@ -26,13 +26,14 @@ struct
     outputs : string list option;
   }
 
-  let dedup lst =
-    List.fold_left
-      (fun acc x -> if List.mem x acc then acc else x :: acc)
-      [] lst
-    |> List.rev
-
   let rules_to_control (rules : rule list) : control list =
+    let dedup lst =
+      List.fold_left
+        (fun acc x -> if List.mem x acc then acc else x :: acc)
+        [] lst
+      |> List.rev
+    in
+    
     rules
     |> List.map fst        
     |> List.concat         
@@ -128,11 +129,11 @@ struct
       (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i)
       state.transitions;
 
-    match state.outputs with
+    (match state.outputs with
     | Some outs -> 
         print_endline "Outputs: ";
-        List.iter print_endline outs
-    | None -> ();
+        List.iter print_endline outs;
+    | None -> ());
 
     print_endline "==========================\n\n\n"
 
