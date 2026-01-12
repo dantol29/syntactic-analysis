@@ -8,7 +8,7 @@ SOURCES = $(SRC)/main.ml
 OBJS = $(SOURCES:.ml=.cmo)
 
 # Bytecode-Libs
-LIBS = unix.cma
+LIBS = -I +unix unix.cma
 
 .PHONY: all clean re run status
 

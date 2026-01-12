@@ -7,8 +7,7 @@ module Fsm : sig
   type transition
   type state
 
-  val print_state : int -> state -> unit
-  val print_outputs : state -> unit
+  val print_state : int -> state -> bool -> unit
   val print_rule : rule -> unit
   val create_states :  rule list -> state list
   val control_to_string : control -> string
@@ -119,28 +118,25 @@ struct
     List.iter (fun ctrl -> print_string (control_to_string ctrl)) c;
     print_endline a
 
-  let print_state (index: int) (state: state) =
-    if index == -1 then 
-      print_endline "\n=======Current State======\n"
-    else 
-      Printf.printf "======== State %d ========\n" index;
-
-    List.iter
-      (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i)
-      state.transitions;
-
+  let print_state (index: int) (state: state) debug =
     (match state.outputs with
     | Some outs -> 
         print_endline "Outputs: ";
         List.iter print_endline outs;
     | None -> ());
+    
+    if debug then ( 
+        if index == -1 then 
+                print_endline "\n=======Current State======\n"
+        else 
+                Printf.printf "======== State %d ========\n" index;
 
-    print_endline "==========================\n\n\n"
+         List.iter
+        (fun (c, i) -> Printf.printf "%s -> %d\n" (control_to_string c) i)
+        state.transitions;
 
-  let print_outputs (state : state) =
-    match state.outputs with
-    | None -> ()
-    | Some outs -> List.iter (fun a -> Printf.printf "ACTION: %s!\n" a) outs
+        print_endline "==========================\n\n\n"
+    )
 end
 
 let with_raw_terminal f =
@@ -178,7 +174,7 @@ let char_to_control keymap ch = List.assoc_opt ch keymap
 let print_game_info debug rules states keymap =
   if debug then (
     print_endline "\nFSM States: \n";
-    List.iteri Fsm.print_state states;
+    List.iteri (fun i state -> Fsm.print_state i state true ) states;
     print_endline ""
   );
 
@@ -206,9 +202,8 @@ let () =
     let debug = Array.length Sys.argv > 2 && Sys.argv.(2) = "debug" in
     print_game_info debug rules states keymap;
 
-    let rec game state sequence =
-      Fsm.print_outputs state;
-      if debug then Fsm.print_state (-1) state;
+    let rec game (state: Fsm.state) sequence =
+      Fsm.print_state (-1) state debug;
 
       let ch = read_char () in
       match char_to_control keymap ch with
